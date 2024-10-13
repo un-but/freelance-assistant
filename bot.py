@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 from aiogram import Bot, Dispatcher
-from aiogram.filters import CommandStart, Command
+from aiogram.filters import Command, CommandStart
 from aiogram.types import Message
 
 from constants import TOKEN
@@ -14,7 +14,7 @@ bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
 
-async def send_mailing():
+async def send_mailing() -> None:
     while True:
         # TODO Правильно поделить функции на сохранение в бд и возврат самого заказа для отправки
         orders = {await get_data_from_habr()} | {get_data_from_kwork()}
@@ -25,7 +25,7 @@ async def send_mailing():
 
 
 @dp.message(CommandStart())
-async def start_handler(message: Message):
+async def start_handler(message: Message) -> None:
     await add_user(message)
     await message.answer(
         "Здравствуйте, этот бот будет отправлять вам все новые заказы с сайтов https://freelance.habr.com/ и https://kwork.ru/."
@@ -35,7 +35,7 @@ async def start_handler(message: Message):
 
 
 @dp.message(Command("stop"))
-async def stop_handler(message: Message):
+async def stop_handler(message: Message) -> None:
     await delete_user(message)
     await message.answer(
         "Вы полностью отказались от рассылки. Спасибо что пользовались этим ботом!"
@@ -48,7 +48,7 @@ async def main() -> None:
     await dp.start_polling(bot)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     try:
         asyncio.run(main())

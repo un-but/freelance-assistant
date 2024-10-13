@@ -1,2 +1,7 @@
-/.venv
-/constants.py
+__*__/
+
+.venv/
+.test/
+
+constants.py
+data.json

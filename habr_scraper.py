@@ -1,4 +1,5 @@
 """Functions for getting all orders from Habr Freelance in search request."""
+from __future__ import annotations
 
 import asyncio
 
@@ -6,43 +7,47 @@ import aiohttp
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 
-import database
+from utils import json_dump, json_load
 
 
-async def get_data_from_habr() -> None:
+async def get_data_from_habr() -> list | None:
     """Main function, adding info from all pages to database."""
     async_tasks = []
+    result = None
     async with aiohttp.ClientSession() as session:
-        p = 1
         headers = {
-            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-            "user-agent": UserAgent().random
+            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",  # noqa: E501
+            "user-agent": UserAgent().random,
         }
-        while True:
-            url = f"https://freelance.habr.com/tasks?categories=development_bots&page={p}"
+        url = "https://freelance.habr.com/tasks?categories=development_bots"
 
-            async with session.get(url=url, headers=headers) as res:
-                src = await res.text()
+        async with session.get(url=url, headers=headers) as res:
+            src = await res.text()
 
-            soup = BeautifulSoup(src, "lxml")
+        soup = BeautifulSoup(src, "lxml")
+        order_urls = ["https://freelance.habr.com" + order_url.find("a")["href"] for order_url in soup.find_all(class_="task__title")]
+        json_file = await json_load()
 
-            if soup.find(class_="empty-block__title"):
+        if json_file["habr"]:
+            for order_url in order_urls:
+                for saved_order_url in json_file["habr"]:
+                    if order_url == saved_order_url:
+                        break
+                else:
+                    async_tasks.append(
+                        asyncio.create_task(get_data_from_habr_order_page(order_url, session)),
+                    )
+                    continue
                 break
+            result = await asyncio.gather(*async_tasks)
 
-            orders = soup.find_all(class_="task__title")
-            for order in orders:
-                order_url = "https://freelance.habr.com" + order.find("a")["href"]
-                async_tasks.append(
-                    asyncio.create_task(get_data_from_habr_order_page(order_url, session))
-                )
-
-            p += 1
-
-        await asyncio.gather(*async_tasks)
+        json_file["habr"] = order_urls[:3]
+        await json_dump(json_file)
+        return result
 
 
 async def get_data_from_habr_order_page(order_url: str, session: aiohttp.ClientSession) -> None:
-    """Functions for getting info from one page
+    """Return info from order page
 
     Args:
         order_url (str): link to order page
@@ -62,14 +67,13 @@ async def get_data_from_habr_order_page(order_url: str, session: aiohttp.ClientS
     order_date = f"{order_meta[0]}/нет информации"
     order_responses = order_meta[1]
 
-
-    database.add_order_to_db(
+    return (
         order_url,
         order_name,
         order_date,
         order_description,
         order_price,
-        order_responses
+        order_responses,
     )
 
 

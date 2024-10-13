@@ -1,7 +1,10 @@
-import aiofiles
-import os
 import json
+import os
+
+import aiofiles
 from aiogram.types import Message
+from selenium.webdriver import Chrome
+from selenium.webdriver.chrome.options import Options
 
 # async def init_db() -> None:
 #     async with aiosqlite.connect("users_data.db") as db:
@@ -31,7 +34,7 @@ from aiogram.types import Message
 #                     """)
 #         await db.commit()
 
-    
+
 # async def add_user(message: Message) -> None:
 #     async with aiosqlite.connect("users_data.db") as db:
 #         await db.execute(
@@ -59,6 +62,38 @@ from aiogram.types import Message
 # async def check_new_orders():
 #     pass
 
+
+def create_driver(mode="headless") -> Chrome:
+    """Create chrome driver object.
+
+    Args:
+        mode (str, optional): "headless" for server or "desktop" for debug. Defaults to "headless".
+
+    Returns:
+        webdriver.Chrome
+    """
+    options = Options()
+
+    if mode == "headless":
+        options_list = [
+            "--no-sandbox",
+            "--disable-gpu",
+            "--disable-dev-shm-usage",
+            "--headless",
+            "--ignore-certificate-errors-spki-list",
+            "--log-level=3",
+            "--start-maximized"
+        ]
+    elif mode == "desktop":
+        # Добавить функции для отображения браузера
+        pass
+
+    for option in options_list:
+        options.add_argument(option)
+
+    return Chrome(options=options)
+
+
 async def create_basic_json() -> None:
     async with aiofiles.open("data.json", "w", encoding="utf-8") as file:
         await file.write(json.dumps({"users": [], "habr": [], "kwork": []}, indent=4, ensure_ascii=False))
@@ -74,3 +109,15 @@ async def json_load() -> list:
 async def json_dump(array: list) -> None:
     async with aiofiles.open("data.json", "w", encoding="utf-8") as file:
         await file.write(json.dumps(array, indent=4, ensure_ascii=False))
+
+
+async def add_user(message: Message) -> None:
+    pass
+
+
+async def get_all_users() -> list:
+    pass
+
+
+async def delete_user(message: Message) -> None:
+    pass

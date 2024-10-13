@@ -30,15 +30,12 @@ async def get_data_from_habr() -> list | None:
 
         if json_file["habr"]:
             for order_url in order_urls:
-                for saved_order_url in json_file["habr"]:
-                    if order_url == saved_order_url:
-                        break
+                if order_url in json_file["habr"]:
+                    break
                 else:
                     async_tasks.append(
                         asyncio.create_task(get_data_from_habr_order_page(order_url, session)),
                     )
-                    continue
-                break
             result = await asyncio.gather(*async_tasks)
 
         json_file["habr"] = order_urls[:3]

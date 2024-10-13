@@ -2,6 +2,7 @@ __*__/
 
 .venv/
 .test/
+TODO.md
 
 constants.py
 data.json

@@ -6,9 +6,9 @@ from aiogram.filters import Command, CommandStart
 from aiogram.types import Message
 
 from constants import TOKEN
-from db import add_user, delete_user, get_all_users
 from habr_scraper import get_data_from_habr
 from kwork_scraper import get_data_from_kwork
+from utils import add_user, delete_user, get_all_users
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()

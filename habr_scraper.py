@@ -10,10 +10,10 @@ from fake_useragent import UserAgent
 from utils import json_dump, json_load
 
 
-async def get_data_from_habr() -> list | None:
+async def get_data_from_habr() -> set:
     """Main function, adding info from all pages to database."""
     async_tasks = []
-    result = None
+    result = []
     async with aiohttp.ClientSession() as session:
         headers = {
             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",  # noqa: E501
@@ -32,15 +32,14 @@ async def get_data_from_habr() -> list | None:
             for order_url in order_urls:
                 if order_url in json_file["habr"]:
                     break
-                else:
-                    async_tasks.append(
-                        asyncio.create_task(get_data_from_habr_order_page(order_url, session)),
-                    )
+                async_tasks.append(
+                    asyncio.create_task(get_data_from_habr_order_page(order_url, session)),
+                )
             result = await asyncio.gather(*async_tasks)
 
         json_file["habr"] = order_urls[:3]
         await json_dump(json_file)
-        return result
+        return set(result)
 
 
 async def get_data_from_habr_order_page(order_url: str, session: aiohttp.ClientSession) -> None:
@@ -72,8 +71,3 @@ async def get_data_from_habr_order_page(order_url: str, session: aiohttp.ClientS
         order_price,
         order_responses,
     )
-
-
-
-if __name__ == "__main__":
-    asyncio.run(get_data_from_habr())

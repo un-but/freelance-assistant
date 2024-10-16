@@ -1,4 +1,4 @@
-"""Functions for getting all orders from Kwork in search request."""
+from __future__ import annotations
 
 import time
 
@@ -8,8 +8,7 @@ from selenium.webdriver.common.by import By
 from utils import create_driver, json_dump, json_load
 
 
-async def get_data_from_kwork() -> list | None:
-    """Main function, retrieves all orders tags."""
+async def get_data_from_kwork() -> set:
     driver = create_driver()
     url = "https://kwork.ru/projects?c=41"
     result = []
@@ -47,9 +46,12 @@ async def get_data_from_kwork() -> list | None:
             order_price,
             order_responses,
         ))
-    driver.close()
+
     if result:
-        json_file["kwork"] = [order[0] for order in result[:3]]
+        order_urls = [order[0] for order in result]
+        result = None if not json_file["kwork"] else set(result)
+        json_file["kwork"] = (order_urls + json_file["kwork"])[:3]
         await json_dump(json_file)
-    print(result)
-    return result
+
+    driver.close()
+    return set(result)

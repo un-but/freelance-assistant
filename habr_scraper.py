@@ -1,4 +1,4 @@
-"""Functions for getting all orders from Habr Freelance in search request."""
+"""https://freelance.habr.com scraper functions."""
 from __future__ import annotations
 
 import asyncio
@@ -11,7 +11,12 @@ from utils import json_dump, json_load
 
 
 async def get_data_from_habr() -> set:
-    """Main function, adding info from all pages to database."""
+    """Receives latest orders from Habr Freelance.
+
+    Returns:
+        set: set of tuples with information about orders
+
+    """
     async_tasks = []
     result = []
     async with aiohttp.ClientSession() as session:
@@ -42,12 +47,16 @@ async def get_data_from_habr() -> set:
         return set(result)
 
 
-async def get_data_from_habr_order_page(order_url: str, session: aiohttp.ClientSession) -> None:
-    """Return info from order page
+async def get_data_from_habr_order_page(order_url: str, session: aiohttp.ClientSession) -> tuple:
+    """Collect order info from order page.
 
     Args:
-        order_url (str): link to order page
-        session (aiohttp.ClientSession): aiohttp session for requests to order pages
+        order_url (str): order page url
+        session (aiohttp.ClientSession): aiohttp client session for requests
+
+    Returns:
+        tuple: order info
+
     """
     headers = {"user-agent": UserAgent().random}
 

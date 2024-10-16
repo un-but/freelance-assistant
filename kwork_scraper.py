@@ -1,3 +1,4 @@
+"""https://kwork.ru/projects scraper functions."""
 from __future__ import annotations
 
 import time
@@ -9,6 +10,12 @@ from utils import create_driver, json_dump, json_load
 
 
 async def get_data_from_kwork() -> set:
+    """Receives latest orders from Kwork project exchange.
+
+    Returns:
+        set: set of tuples with information about orders
+
+    """
     driver = create_driver()
     url = "https://kwork.ru/projects?c=41"
     result = []

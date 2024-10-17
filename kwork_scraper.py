@@ -9,20 +9,20 @@ from selenium.webdriver.common.by import By
 from utils import create_driver, json_dump, json_load
 
 
-async def get_data_from_kwork() -> set:
+async def get_data_from_kwork(url: str = "https://kwork.ru/projects?c=41") -> set:
     """Receives latest orders from Kwork project exchange.
 
     Returns:
         set: set of tuples with information about orders
 
     """
-    driver = create_driver()
-    url = "https://kwork.ru/projects?c=41"
-    result = []
-    driver.get(url)
+    new_orders = set()
     json_file = await json_load()
 
+    driver = create_driver(mode="headless")
+    driver.get(url)
     orders = driver.find_elements(By.CLASS_NAME, "want-card")
+
     for order in orders:
         order_header = order.find_element(By.CLASS_NAME, "wants-card__header-title")
         order_url = order_header.find_element(By.TAG_NAME, "a").get_attribute("href")
@@ -41,11 +41,11 @@ async def get_data_from_kwork() -> set:
         except NoSuchElementException:
             order_description = description.text
 
-        order_info = order.find_element(By.CLASS_NAME, "want-card__informers-row").find_elements(By.CLASS_NAME, "mr8")
+        order_info = order.find_element(By.CLASS_NAME, "want-card__informers-row").find_elements(By.TAG_NAME, "span")
         order_date = order_info[0].text.strip()
         order_responses = f"{order_info[1].text.split(": ")[1]} откликов"
 
-        result.append((
+        new_orders.add((
             order_url,
             order_name,
             order_date,
@@ -54,11 +54,11 @@ async def get_data_from_kwork() -> set:
             order_responses,
         ))
 
-    if result:
-        order_urls = [order[0] for order in result]
-        result = None if not json_file["kwork"] else set(result)
+    if new_orders:
+        order_urls = [order[0] for order in new_orders]
+        new_orders = set() if not json_file["kwork"] else set(new_orders)
         json_file["kwork"] = (order_urls + json_file["kwork"])[:3]
         await json_dump(json_file)
 
     driver.close()
-    return set(result)
+    return new_orders

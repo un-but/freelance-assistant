@@ -9,12 +9,11 @@ from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.options import Options
 
 
-def create_driver(mode: str = "headless") -> Chrome:
+def create_driver(mode: str = "desktop") -> Chrome:
     """Create chrome driver object.
 
     Args:
-        mode (str, optional): "headless" for server or "desktop" for debug. Defaults to "headless"
-
+        mode (str, optional): "headless" for server and "desktop" or not specify for debug with graphical interface
     Returns:
         Chrome: chrome driver object
 
@@ -29,11 +28,13 @@ def create_driver(mode: str = "headless") -> Chrome:
             "--headless",
             "--ignore-certificate-errors-spki-list",
             "--log-level=3",
-            "--start-maximized",
         ]
     elif mode == "desktop":
-        # TODO Добавить функции для отображения браузера
-        pass
+        options_list = [
+            "--ignore-certificate-errors-spki-list",
+            "--log-level=3",
+        ]
+
 
     for option in options_list:
         options.add_argument(option)
@@ -41,41 +42,16 @@ def create_driver(mode: str = "headless") -> Chrome:
     return Chrome(options=options)
 
 
-async def create_basic_json() -> None:
-    """Create json file with users, habr and kwork lists."""
-    async with aiofiles.open("data.json", "w", encoding="utf-8") as file:
-        await file.write(json.dumps({"users": [], "habr": [], "kwork": []}, indent=4, ensure_ascii=False))
-
-
 async def json_load() -> dict:
-    """Return json file, if file doesn't exists, create its base version and return it."""
+    """Return json file, if file doesn't exists, create its basic version and return it."""
     if not Path("data.json").exists():
-        await create_basic_json()
+        basic_json = {"users": [], "habr": [], "kwork": []}
+        await json_dump(basic_json)
     async with aiofiles.open("data.json", encoding="utf-8") as file:
         return json.loads(await file.read())
 
 
-async def json_dump(array: dict) -> None:
+async def json_dump(json_object: dict) -> None:
     """Dump dictionary to json file."""
     async with aiofiles.open("data.json", "w", encoding="utf-8") as file:
-        await file.write(json.dumps(array, indent=4, ensure_ascii=False))
-
-
-async def add_user(message: Message) -> None:
-    """Add user to users list by id from message."""
-    json_file = await json_load()
-    json_file["users"].append(message.from_user.id)
-    await json_dump(json_file)
-
-
-async def delete_user(message: Message) -> None:
-    """Delete user from users list."""
-    json_file = await json_load()
-    json_file["users"].remove(message.from_user.id)
-    await json_dump(json_file)
-
-
-async def get_all_users() -> list:
-    """Return users list."""
-    json_file = await json_load()
-    return json_file["users"]
+        await file.write(json.dumps(json_object, indent=4, ensure_ascii=False))

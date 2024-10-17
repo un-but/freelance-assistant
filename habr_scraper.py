@@ -10,21 +10,23 @@ from fake_useragent import UserAgent
 from utils import json_dump, json_load
 
 
-async def get_data_from_habr() -> set:
+async def get_data_from_habr(url: str = "https://freelance.habr.com/tasks?categories=development_bots") -> set:
     """Receives latest orders from Habr Freelance.
+
+    Args:
+        url (str): main page or category URL for finding new orders.
 
     Returns:
         set: set of tuples with information about orders
 
     """
     async_tasks = []
-    result = []
+    new_orders = []
     async with aiohttp.ClientSession() as session:
         headers = {
-            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",  # noqa: E501
+            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
             "user-agent": UserAgent().random,
         }
-        url = "https://freelance.habr.com/tasks?categories=development_bots"
 
         async with session.get(url=url, headers=headers) as res:
             src = await res.text()
@@ -40,18 +42,19 @@ async def get_data_from_habr() -> set:
                 async_tasks.append(
                     asyncio.create_task(get_data_from_habr_order_page(order_url, session)),
                 )
-            result = await asyncio.gather(*async_tasks)
+
+            new_orders = await asyncio.gather(*async_tasks)
 
         json_file["habr"] = order_urls[:3]
         await json_dump(json_file)
-        return set(result)
+        return set(new_orders)
 
 
 async def get_data_from_habr_order_page(order_url: str, session: aiohttp.ClientSession) -> tuple:
     """Collect order info from order page.
 
     Args:
-        order_url (str): order page url
+        order_url (str): order page URL
         session (aiohttp.ClientSession): aiohttp client session for requests
 
     Returns:
@@ -64,6 +67,7 @@ async def get_data_from_habr_order_page(order_url: str, session: aiohttp.ClientS
         src = await res.text()
 
     order_soup = BeautifulSoup(src, "lxml")
+
     order_name = order_soup.find(class_="task__title").get_text(" ", strip=True)
     order_description = order_soup.find(class_="task__description").get_text("\n", strip=True)
     order_price = order_soup.find(class_="task__finance").get_text(strip=True)

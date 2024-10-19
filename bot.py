@@ -16,7 +16,6 @@ bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
 # TODO добавить функцию, которая будет автоматически распределять заказы по функциям в зависимости от домена
-# TODO проверить работу, если последний заказ так и не был найден (на другой странице)
 
 async def send_mailing() -> None:
     """Send new orders info to all users, runs every 3 minutes."""
@@ -31,6 +30,7 @@ async def send_mailing() -> None:
         new_orders = new_habr_orders.union(new_kwork_orders)
         logging.info("Data collection ended")
 
+        # Send mailing
         for user_id in (await json_load())["users"]:
             for new_order in new_orders:
                 order_text = (
@@ -47,6 +47,7 @@ async def send_mailing() -> None:
 @dp.message(CommandStart())
 async def start_handler(message: Message) -> None:
     """Handle /start command, enables the user's mailing."""
+    # Add user to json file
     json_file = await json_load()
     json_file["users"].append(message.from_user.id)
     await json_dump(json_file)
@@ -61,6 +62,7 @@ async def start_handler(message: Message) -> None:
 @dp.message(Command("stop"))
 async def stop_handler(message: Message) -> None:
     """Handle /stop command, disables the user's mailing."""
+    # Remove user from json file
     json_file = await json_load()
     json_file["users"].remove(message.from_user.id)
     await json_dump(json_file)

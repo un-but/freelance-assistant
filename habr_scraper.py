@@ -35,6 +35,7 @@ async def get_data_from_habr(url: str = "https://freelance.habr.com/tasks?catego
         order_urls = ["https://freelance.habr.com" + order_url.find("a")["href"] for order_url in soup.find_all(class_="task__title")]
         json_file = await json_load()
 
+        # If the last processed orders have already been saved, then add all new ones to the list for mailing 
         if json_file["habr"]:
             for order_url in order_urls:
                 if order_url in json_file["habr"]:
@@ -43,8 +44,10 @@ async def get_data_from_habr(url: str = "https://freelance.habr.com/tasks?catego
                     asyncio.create_task(get_data_from_habr_order_page(order_url, session)),
                 )
 
+            # If the last processed order was not found on the page, all orders from it will be returned
             new_orders = await asyncio.gather(*async_tasks)
 
+        # Overwriting the last 3 orders
         json_file["habr"] = order_urls[:3]
         await json_dump(json_file)
         return set(new_orders)

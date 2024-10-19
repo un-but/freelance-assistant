@@ -35,7 +35,6 @@ def create_driver(mode: str = "desktop") -> Chrome:
             "--log-level=3",
         ]
 
-
     for option in options_list:
         options.add_argument(option)
 

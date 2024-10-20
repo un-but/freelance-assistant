@@ -1,4 +1,5 @@
 """Main file launches bot via polling."""
+from __future__ import annotations
 
 import asyncio
 import logging
@@ -15,22 +16,50 @@ from utils import json_dump, json_load
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-# TODO добавить функцию, которая будет автоматически распределять заказы по функциям в зависимости от домена
+
+async def get_new_orders(page_urls: set[str]) -> set:
+    """Distributes pages with orders between functions with logging of all actions.
+
+    Supported sites:
+        1. kwork.ru/projects
+        2. freelance.habr.com/tasks
+
+    Args:
+        page_urls (list[str]): URL that can be processed by one of the functions
+
+    Returns:
+        set: contain tuples with information about each order
+
+    """
+    logging.info("Data collection started")
+    new_orders = set()
+
+    # TODO неправильно записываются последние заказы, потому что отдельные списки есть только для сайтов в целом, а не для отдельных страниц.
+    for page_url in page_urls:
+        if "https://freelance.habr.com/tasks" in page_url:
+            new_orders.update(await get_data_from_habr(page_url))
+        elif "https://kwork.ru/projects" in page_url:
+            new_orders.update(await get_data_from_kwork(page_url))
+        else:
+            logging.info("%s URL is invalid")
+            continue
+
+        logging.info("Orders from the %s are collected", page_url)
+
+    logging.info("Data collection ended")
+    return new_orders
+
 
 async def send_mailing() -> None:
     """Send new orders info to all users, runs every 3 minutes."""
     while True:
-        logging.info("Data collection started")
-        new_habr_orders = await get_data_from_habr()
-        logging.info("Habr data collection ended")
+        await asyncio.sleep(5)
+        new_orders = await get_new_orders({
+            "https://freelance.habr.com/tasks?categories=development_bots",
+            "https://kwork.ru/projects?c=41&attr=211",
+            "https://kwork.ru/projects?c=41&attr=3587",
+        })
 
-        new_kwork_orders = await get_data_from_kwork()
-        logging.info("Kwork data collection ended")
-
-        new_orders = new_habr_orders.union(new_kwork_orders)
-        logging.info("Data collection ended")
-
-        # Send mailing
         for user_id in (await json_load())["users"]:
             for new_order in new_orders:
                 order_text = (
@@ -82,5 +111,5 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     asyncio.run(main())

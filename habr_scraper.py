@@ -7,7 +7,7 @@ import aiohttp
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 
-from utils import json_dump, json_load
+from utils import add_last_orders, get_last_orders, check_page_for_processing, init_db
 
 
 async def get_data_from_habr(url: str = "https://freelance.habr.com/tasks?categories=development_bots") -> set:
@@ -20,6 +20,8 @@ async def get_data_from_habr(url: str = "https://freelance.habr.com/tasks?catego
         set: set of tuples with information about orders
 
     """
+    # FIXME УДАЛИТЬ
+    await init_db()
     async_tasks = []
     new_orders = []
     async with aiohttp.ClientSession() as session:
@@ -33,12 +35,11 @@ async def get_data_from_habr(url: str = "https://freelance.habr.com/tasks?catego
 
         soup = BeautifulSoup(src, "lxml")
         order_urls = ["https://freelance.habr.com" + order_url.find("a")["href"] for order_url in soup.find_all(class_="task__title")]
-        json_file = await json_load()
 
-        # If the last processed orders have already been saved, then add all new ones to the list for mailing 
-        if json_file["habr"]:
+        # If the last processed orders have already been saved, then add all new ones to the list for mailing
+        if await check_page_for_processing(url):
             for order_url in order_urls:
-                if order_url in json_file["habr"]:
+                if order_url in await get_last_orders(url):
                     break
                 async_tasks.append(
                     asyncio.create_task(get_data_from_habr_order_page(order_url, session)),
@@ -48,8 +49,8 @@ async def get_data_from_habr(url: str = "https://freelance.habr.com/tasks?catego
             new_orders = await asyncio.gather(*async_tasks)
 
         # Overwriting the last 3 orders
-        json_file["habr"] = order_urls[:3]
-        await json_dump(json_file)
+        await add_last_orders(url, *order_urls[:3])
+        print(set(new_orders))
         return set(new_orders)
 
 
@@ -87,3 +88,7 @@ async def get_data_from_habr_order_page(order_url: str, session: aiohttp.ClientS
         order_price,
         order_responses,
     )
+
+# FIXME УДАЛИТЬ
+if __name__ == "__main__":
+    asyncio.run(get_data_from_habr())

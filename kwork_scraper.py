@@ -6,7 +6,7 @@ import time
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 
-from utils import create_driver, json_dump, json_load
+from utils import create_driver, add_last_orders, get_last_orders, check_page_for_processing, init_db
 
 
 async def get_data_from_kwork(url: str = "https://kwork.ru/projects?c=41") -> set:
@@ -17,7 +17,6 @@ async def get_data_from_kwork(url: str = "https://kwork.ru/projects?c=41") -> se
 
     """
     new_orders = set()
-    json_file = await json_load()
 
     driver = create_driver(mode="headless")
     driver.get(url)

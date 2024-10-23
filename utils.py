@@ -62,47 +62,49 @@ async def add_last_orders(page_url: str, first_order: str, second_order: str, th
     async with aiosqlite.connect("data.db") as db:
         await db.execute(
             """
-                INSERT INTO last_orders (page_url, first_order, second_order, third_order) 
+                INSERT INTO last_orders (page_url, first_order, second_order, third_order)
                 VALUES (?, ?, ?, ?)
 
                 ON CONFLICT (page_url) DO UPDATE SET
 
-                first_order=excluded.first_order, 
-                second_order=excluded.second_order, 
+                first_order=excluded.first_order,
+                second_order=excluded.second_order,
                 third_order=excluded.third_order
             """,
-            (page_url, first_order, second_order, third_order)
+            (page_url, first_order, second_order, third_order),
         )
         await db.commit()
 
 
-# TODO объединить эти функции get_last_orders и check_page_for_processing
-async def get_last_orders(page_url: str) -> set:
+async def get_last_orders(page_url: str) -> list:
     async with aiosqlite.connect("data.db") as db:
-        async with db.execute("SELECT * FROM last_orders WHERE page_url = ?", (page_url,)) as cur:
+        async with db.execute(
+            "SELECT first_order, second_order, third_order FROM last_orders WHERE page_url = ?",
+            (page_url,),
+        ) as cur:
             last_orders = await cur.fetchone()
-            return set(last_orders[1:])
+            return last_orders if last_orders else []
 
 
-async def check_page_for_processing(page_url: str) -> bool:
+async def get_users() -> list:
     async with aiosqlite.connect("data.db") as db:
-        async with db.execute("SELECT * FROM last_orders WHERE page_url = ?", (page_url,)) as cur:
-            return bool(await cur.fetchall())
+        async with db.execute("SELECT user_id FROM users") as cur:
+            return [row[0] async for row in cur]
 
 
 async def add_user(username: str, user_id: int) -> None:
     async with aiosqlite.connect("data.db") as db:
         await db.execute(
             "INSERT INTO users (username, user_id) VALUES (?, ?)",
-            (username, user_id)
+            (username, user_id),
             )
         await db.commit()
 
 
-async def delete_user(user_id: int) -> None:
+async def remove_user(user_id: int) -> None:
     async with aiosqlite.connect("data.db") as db:
         await db.execute(
             "DELETE FROM users WHERE user_id = ?",
-            (user_id,)
+            (user_id,),
         )
         await db.commit()

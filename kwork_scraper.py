@@ -1,12 +1,13 @@
 """https://kwork.ru/projects scraper functions."""
 from __future__ import annotations
 
+import logging
 import time
 
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 
-from utils import create_driver, add_last_orders, get_last_orders, check_page_for_processing, init_db
+from utils import add_last_orders, create_driver, get_last_orders
 
 
 async def get_data_from_kwork(url: str = "https://kwork.ru/projects?c=41") -> set:
@@ -16,19 +17,24 @@ async def get_data_from_kwork(url: str = "https://kwork.ru/projects?c=41") -> se
         set: set of tuples with information about orders
 
     """
-    new_orders = set()
+    last_orders = await get_last_orders(url)
+    new_orders = []
 
     driver = create_driver(mode="headless")
+    logging.debug("Driver created")
     driver.get(url)
     orders = driver.find_elements(By.CLASS_NAME, "want-card")
 
+    logging.debug("Page received")
     for order in orders:
+        logging.debug("Order handled")
         order_header = order.find_element(By.CLASS_NAME, "wants-card__header-title")
         order_url = order_header.find_element(By.TAG_NAME, "a").get_attribute("href")
         order_name = order_header.text.strip()
 
-        # If an order was already done during the last time, iteration stops.
-        if order_url in json_file["kwork"]:
+        # If an order was already processed the last time, iteration stops.
+        if order_url in last_orders:
+            logging.debug("aborted")
             break
 
         order_price = order.find_element(By.CLASS_NAME, "wants-card__price").find_element(By.CLASS_NAME, "d-inline").text.strip()
@@ -47,7 +53,7 @@ async def get_data_from_kwork(url: str = "https://kwork.ru/projects?c=41") -> se
         order_responses = f"{order_info[1].text.split(": ")[1]} откликов"
 
         # If the last processed order was not found on the page, all orders from it will be returned
-        new_orders.add((
+        new_orders.append((
             order_url,
             order_name,
             order_date,
@@ -56,14 +62,13 @@ async def get_data_from_kwork(url: str = "https://kwork.ru/projects?c=41") -> se
             order_responses,
         ))
 
-    # If there are new orders, we get their URLs.
+    # If there are new orders, we get their URLs and add last three new orders to db.
     if new_orders:
         order_urls = [order[0] for order in new_orders]
-        # If there were no orders before, the function returns empty list. Otherwise, it gives new orders.
-        new_orders = set() if not json_file["kwork"] else set(new_orders)
-        # The last three orders are checked to find new orders at the next function call.
-        json_file["kwork"] = (order_urls + json_file["kwork"])[:3]
-        await json_dump(json_file)
+        esh = order_urls + list(last_orders)
+        await add_last_orders(url, *esh[:3])
+        logging.debug("New orders added to database")
 
+    # If there were no orders before, the function returns empty list. Otherwise, it gives new orders.
     driver.close()
     return new_orders

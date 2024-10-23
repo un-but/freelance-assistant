@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 
 import aiohttp
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 
-from utils import add_last_orders, get_last_orders, check_page_for_processing, init_db
+from utils import add_last_orders, get_last_orders
 
 
 async def get_data_from_habr(url: str = "https://freelance.habr.com/tasks?categories=development_bots") -> set:
@@ -20,9 +21,8 @@ async def get_data_from_habr(url: str = "https://freelance.habr.com/tasks?catego
         set: set of tuples with information about orders
 
     """
-    # FIXME УДАЛИТЬ
-    await init_db()
     async_tasks = []
+    last_orders = await get_last_orders(url)
     new_orders = []
     async with aiohttp.ClientSession() as session:
         headers = {
@@ -32,14 +32,15 @@ async def get_data_from_habr(url: str = "https://freelance.habr.com/tasks?catego
 
         async with session.get(url=url, headers=headers) as res:
             src = await res.text()
+            logging.debug("Page received")
 
         soup = BeautifulSoup(src, "lxml")
         order_urls = ["https://freelance.habr.com" + order_url.find("a")["href"] for order_url in soup.find_all(class_="task__title")]
 
         # If the last processed orders have already been saved, then add all new ones to the list for mailing
-        if await check_page_for_processing(url):
+        if last_orders:
             for order_url in order_urls:
-                if order_url in await get_last_orders(url):
+                if order_url in last_orders:
                     break
                 async_tasks.append(
                     asyncio.create_task(get_data_from_habr_order_page(order_url, session)),
@@ -47,11 +48,11 @@ async def get_data_from_habr(url: str = "https://freelance.habr.com/tasks?catego
 
             # If the last processed order was not found on the page, all orders from it will be returned
             new_orders = await asyncio.gather(*async_tasks)
+            logging.debug("New orders collected")
 
         # Overwriting the last 3 orders
         await add_last_orders(url, *order_urls[:3])
-        print(set(new_orders))
-        return set(new_orders)
+        return new_orders
 
 
 async def get_data_from_habr_order_page(order_url: str, session: aiohttp.ClientSession) -> tuple:
@@ -88,7 +89,3 @@ async def get_data_from_habr_order_page(order_url: str, session: aiohttp.ClientS
         order_price,
         order_responses,
     )
-
-# FIXME УДАЛИТЬ
-if __name__ == "__main__":
-    asyncio.run(get_data_from_habr())

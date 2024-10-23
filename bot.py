@@ -11,13 +11,14 @@ from aiogram.types import Message
 from constants import TOKEN
 from habr_scraper import get_data_from_habr
 from kwork_scraper import get_data_from_kwork
-from utils import json_dump, json_load
+from utils import add_user, get_users, remove_user
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-
-async def get_new_orders(page_urls: set[str]) -> set:
+# TODO попробоавать заменить time.sleep на asyncil.sleep
+# TODO вынести работу с бд в отдельный файл db.py, а create_driver перенести в kwork_scraper
+async def get_new_orders(*page_urls: str) -> list:
     """Distributes pages with orders between functions with logging of all actions.
 
     Supported sites:
@@ -32,14 +33,13 @@ async def get_new_orders(page_urls: set[str]) -> set:
 
     """
     logging.info("Data collection started")
-    new_orders = set()
+    new_orders = []
 
-    # TODO неправильно записываются последние заказы, потому что отдельные списки есть только для сайтов в целом, а не для отдельных страниц.
     for page_url in page_urls:
         if "https://freelance.habr.com/tasks" in page_url:
-            new_orders.update(await get_data_from_habr(page_url))
+            new_orders.extend(await get_data_from_habr(page_url))
         elif "https://kwork.ru/projects" in page_url:
-            new_orders.update(await get_data_from_kwork(page_url))
+            new_orders.extend(await get_data_from_kwork(page_url))
         else:
             logging.info("%s URL is invalid")
             continue
@@ -54,32 +54,33 @@ async def send_mailing() -> None:
     """Send new orders info to all users, runs every 3 minutes."""
     while True:
         await asyncio.sleep(5)
-        new_orders = await get_new_orders({
+        new_orders = await get_new_orders(
             "https://freelance.habr.com/tasks?categories=development_bots",
             "https://kwork.ru/projects?c=41&attr=211",
             "https://kwork.ru/projects?c=41&attr=3587",
-        })
+        )
 
-        for user_id in (await json_load())["users"]:
+        if new_orders:
             for new_order in new_orders:
-                order_text = (
-                    f"<a href=\"{new_order[0]}\"><b>{new_order[1]}</b></a>\n"
-                    f"<i>{new_order[4]}</i>\n"
-                    f"<i>{new_order[2]}\t {new_order[5]}</i>\n\n"
-                    f"{new_order[3]}"
-                )
-                await bot.send_message(chat_id=user_id, text=order_text, parse_mode="HTML")
-        logging.info("Newsletter with new orders has been sent")
+                for user_id in await get_users():
+                    order_text = (
+                        f"<a href=\"{new_order[0]}\"><b>{new_order[1]}</b></a>\n"
+                        f"<i>{new_order[4]}</i>\n"
+                        f"<i>{new_order[2]}\t {new_order[5]}</i>\n\n"
+                        f"{new_order[3]}"
+                    )
+                    await bot.send_message(chat_id=user_id, text=order_text, parse_mode="HTML")
+            logging.info("Newsletter with new orders has been sent")
+        else:
+            logging.info("New orders not found")
+
         await asyncio.sleep(180)
 
 
 @dp.message(CommandStart())
 async def start_handler(message: Message) -> None:
     """Handle /start command, enables the user's mailing."""
-    # Add user to json file
-    json_file = await json_load()
-    json_file["users"].append(message.from_user.id)
-    await json_dump(json_file)
+    await add_user(message.from_user.username, message.from_user.id)
 
     await message.answer(
         "Здравствуйте, этот бот будет отправлять вам все новые заказы с сайтов https://freelance.habr.com/ и https://kwork.ru/."
@@ -91,10 +92,7 @@ async def start_handler(message: Message) -> None:
 @dp.message(Command("stop"))
 async def stop_handler(message: Message) -> None:
     """Handle /stop command, disables the user's mailing."""
-    # Remove user from json file
-    json_file = await json_load()
-    json_file["users"].remove(message.from_user.id)
-    await json_dump(json_file)
+    await remove_user(message.from_user.id)
 
     await message.answer(
         "Вы полностью отказались от рассылки. Спасибо что пользовались этим ботом!",

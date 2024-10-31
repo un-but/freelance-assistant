@@ -1,40 +1,6 @@
 """Functions for selenium and json with aiofiles."""
 
 import aiosqlite
-from selenium.webdriver import Chrome
-from selenium.webdriver.chrome.options import Options
-
-
-def create_driver(mode: str = "desktop") -> Chrome:
-    """Create chrome driver object.
-
-    Args:
-        mode (str, optional): "headless" for server and "desktop" or not specify for debug with graphical interface
-    Returns:
-        Chrome: chrome driver object
-
-    """
-    options = Options()
-
-    if mode == "headless":
-        options_list = [
-            "--no-sandbox",
-            "--disable-gpu",
-            "--disable-dev-shm-usage",
-            "--headless",
-            "--ignore-certificate-errors-spki-list",
-            "--log-level=3",
-        ]
-    elif mode == "desktop":
-        options_list = [
-            "--ignore-certificate-errors-spki-list",
-            "--log-level=3",
-        ]
-
-    for option in options_list:
-        options.add_argument(option)
-
-    return Chrome(options=options)
 
 
 async def init_db() -> None:

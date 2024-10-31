@@ -9,15 +9,13 @@ from aiogram.filters import Command, CommandStart
 from aiogram.types import Message
 
 from constants import TOKEN
+from db import add_user, get_users, init_db, remove_user
 from habr_scraper import get_data_from_habr
 from kwork_scraper import get_data_from_kwork
-from utils import add_user, get_users, remove_user
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-# TODO попробоавать заменить time.sleep на asyncil.sleep
-# TODO вынести работу с бд в отдельный файл db.py, а create_driver перенести в kwork_scraper
 async def get_new_orders(*page_urls: str) -> list:
     """Distributes pages with orders between functions with logging of all actions.
 
@@ -34,6 +32,7 @@ async def get_new_orders(*page_urls: str) -> list:
     """
     logging.info("Data collection started")
     new_orders = []
+    await init_db()
 
     for page_url in page_urls:
         if "https://freelance.habr.com/tasks" in page_url:
@@ -53,13 +52,14 @@ async def get_new_orders(*page_urls: str) -> list:
 async def send_mailing() -> None:
     """Send new orders info to all users, runs every 3 minutes."""
     while True:
-        await asyncio.sleep(5)
+        await asyncio.sleep(20)
         new_orders = await get_new_orders(
             "https://freelance.habr.com/tasks?categories=development_bots",
             "https://kwork.ru/projects?c=41&attr=211",
             "https://kwork.ru/projects?c=41&attr=3587",
         )
 
+        print(new_orders)
         if new_orders:
             for new_order in new_orders:
                 for user_id in await get_users():

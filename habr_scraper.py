@@ -8,7 +8,7 @@ import aiohttp
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 
-from utils import add_last_orders, get_last_orders
+from db import add_last_orders, get_last_orders
 
 
 async def get_data_from_habr(url: str = "https://freelance.habr.com/tasks?categories=development_bots") -> set:

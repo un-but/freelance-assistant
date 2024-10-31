@@ -1,13 +1,48 @@
 """https://kwork.ru/projects scraper functions."""
 from __future__ import annotations
 
+import asyncio
 import logging
-import time
 
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver import Chrome
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 
-from utils import add_last_orders, create_driver, get_last_orders
+from db import add_last_orders, get_last_orders
+
+
+def create_driver(mode: str = "desktop") -> Chrome:
+    """Create chrome driver object.
+
+    Args:
+        mode (str, optional): "headless" for server and "desktop" or not specify for debug with graphical interface
+    Returns:
+        Chrome: chrome driver object
+
+    """
+    options = Options()
+
+    if mode == "headless":
+        options_list = [
+            "--no-sandbox",
+            "--disable-gpu",
+            "--disable-dev-shm-usage",
+            "--headless",
+            "--ignore-certificate-errors-spki-list",
+            "--log-level=3",
+        ]
+    elif mode == "desktop":
+        options_list = [
+            "--ignore-certificate-errors-spki-list",
+            "--log-level=3",
+        ]
+
+    for option in options_list:
+        options.add_argument(option)
+
+    return Chrome(options=options)
+
 
 
 async def get_data_from_kwork(url: str = "https://kwork.ru/projects?c=41") -> set:
@@ -43,7 +78,7 @@ async def get_data_from_kwork(url: str = "https://kwork.ru/projects?c=41") -> se
         description = order.find_element(By.CLASS_NAME, "wants-card__description-text")
         try:
             description.find_element(By.CLASS_NAME, "kw-link-dashed").click()
-            time.sleep(0.5)
+            await asyncio.sleep(0.5)
             order_description = description.find_elements(By.CLASS_NAME, "d-inline")[1].text
         except NoSuchElementException:
             order_description = description.text
@@ -65,10 +100,10 @@ async def get_data_from_kwork(url: str = "https://kwork.ru/projects?c=41") -> se
     # If there are new orders, we get their URLs and add last three new orders to db.
     if new_orders:
         order_urls = [order[0] for order in new_orders]
-        esh = order_urls + list(last_orders)
-        await add_last_orders(url, *esh[:3])
+        all_links = order_urls + list(last_orders)
+        await add_last_orders(url, *all_links[:3])
         logging.debug("New orders added to database")
 
     # If there were no orders before, the function returns empty list. Otherwise, it gives new orders.
     driver.close()
-    return new_orders
+    return new_orders if last_orders else []

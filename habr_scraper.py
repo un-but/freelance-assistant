@@ -78,7 +78,7 @@ async def get_data_from_habr_order_page(order_url: str, session: aiohttp.ClientS
     order_price = order_soup.find(class_="task__finance").get_text(strip=True)
 
     order_meta = order_soup.find(class_="task__meta").get_text(" ", strip=True).split("\n • ")
-    order_date = f"{order_meta[0]}/нет информации"
+    order_date = f"{order_meta[0]}"
     order_responses = order_meta[1]
 
     return (

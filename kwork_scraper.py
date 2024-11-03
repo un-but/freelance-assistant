@@ -106,4 +106,4 @@ async def get_data_from_kwork(url: str = "https://kwork.ru/projects?c=41") -> se
 
     # If there were no orders before, the function returns empty list. Otherwise, it gives new orders.
     driver.close()
-    return new_orders if last_orders else []
+    return new_orders[::-1] if last_orders else []

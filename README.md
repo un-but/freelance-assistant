@@ -1,27 +1,30 @@
-<!-- MANPAGE: BEGIN EXCLUDED SECTION -->
 <div align="center">
 
-# Order Scraper
+# Freelance Assistant
 
 [[ENGLISH](README.md)] [[RUSSIAN](README.ru.md)]
 
 
-[![Release version](https://img.shields.io/github/v/release/yt-dlp/yt-dlp?color=brightgreen&label=Download&style=for-the-badge)](#installation "Installation")
-[![License: Unlicense](https://img.shields.io/badge/-Unlicense-blue.svg?style=for-the-badge)](LICENSE "License")
-[![Last Commit](https://img.shields.io/github/last-commit/yt-dlp/yt-dlp/master?label=&style=for-the-badge&display_timestamp=committer)](https://github.com/yt-dlp/yt-dlp/pulse/monthly "Last activity")
+![GitHub License](https://img.shields.io/github/license/un-but/freelance-assistant?style=for-the-badge)
+![Gitea Last Commit](https://img.shields.io/gitea/last-commit/un-but/freelance-assistant?style=for-the-badge)
 
 </div>
 
-My project, on the example of which I studied different ways of parsing and the aiogram library. Collects data from websites and sends it via telegram bot or saves it in sqlite.
 
-## Getting Started
+A Telegram bot that checks the presence of sites for new orders in selected categories every 3 minutes. The aiogram, aiosqlite, aiohttp, and selenium libraries are used. Supports adding new sites.
 
-Read through our [Contribution Guidelines](CONTRIBUTING.md) before you contribute.
+Currently data is collected from websites:
+* https://kwork.ru/projects
+* https://freelance.habr.com/tasks
 
-## Community Channels
+## Usage
 
-We are on [Discord](https://the-algorithms.com/discord) and [Gitter](https://gitter.im/TheAlgorithms/community)! Community channels are a great way for you to ask questions and get help. Please join us!
+Write the installation and modification process
 
-## List of Algorithms
+## How to contact
 
-See our [directory](DIRECTORY.md) for easier navigation and a better overview of the project.
+I have a [Telegram account](https://t.me/unbuting), and I can take orders on the [Kwork](https://kwork.ru/user/unbut) and [Habr Freelance](https://freelance.habr.com/freelancers/UnBut) platforms. I take orders related to parsing and telegram bots.
+
+## License
+
+This project is not licensed, but it is protected by copyright. Read more on [this site](https://choosealicense.com/no-permission/).

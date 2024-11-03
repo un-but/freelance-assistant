@@ -1,27 +1,30 @@
-<!-- MANPAGE: BEGIN EXCLUDED SECTION -->
 <div align="center">
 
-# Order Scraper
+# Freelance Assistant
 
 [[ENGLISH](README.md)] [[RUSSIAN](README.ru.md)]
 
 
-[![Release version](https://img.shields.io/github/v/release/yt-dlp/yt-dlp?color=brightgreen&label=Download&style=for-the-badge)](#installation "Installation")
-[![License: Unlicense](https://img.shields.io/badge/-Unlicense-blue.svg?style=for-the-badge)](LICENSE "License")
-[![Last Commit](https://img.shields.io/github/last-commit/yt-dlp/yt-dlp/master?label=&style=for-the-badge&display_timestamp=committer)](https://github.com/yt-dlp/yt-dlp/pulse/monthly "Last activity")
+![GitHub License](https://img.shields.io/github/license/un-but/freelance-assistant?style=for-the-badge)
+![Gitea Last Commit](https://img.shields.io/gitea/last-commit/un-but/freelance-assistant?style=for-the-badge)
 
 </div>
 
-Мой проект, на примере которого я изучал разные способы парсинга и библиотеку aiogram. Собирает данные с сайтов и присылает их через бота телеграм или сохраняет в sqlite.
 
-## Getting Started
+Телеграм бот, который каждые 3 минуты проверяет присутствие сайты на новые заказы в выбранных категориях. Используются библиотеки aiogram, aiosqlite, aiohttp и selenium. Поддерживает добавление новых сайтов.
 
-Read through our [Contribution Guidelines](CONTRIBUTING.md) before you contribute.
+На данный момент данные собираются данные с сайтов:
+* https://kwork.ru/projects
+* https://freelance.habr.com/tasks
 
-## Community Channels
+## Использование
 
-We are on [Discord](https://the-algorithms.com/discord) and [Gitter](https://gitter.im/TheAlgorithms/community)! Community channels are a great way for you to ask questions and get help. Please join us!
+Написать процесс установки и изменения
 
-## List of Algorithms
+## Как связаться
 
-See our [directory](DIRECTORY.md) for easier navigation and a better overview of the project.
+У меня есть [телеграм](https://t.me/unbuting), заказы я могу взять на платформах [Kwork](https://kwork.ru/user/unbut) и [Habr Freelance](https://freelance.habr.com/freelancers/UnBut). Беру заказы, связанные с парсингом и телеграм ботами.
+
+## Лицензия
+
+Этот проект не имеет лицензии, однако защищен авторским правом. Подробнее читайте на [этом сайте](https://choosealicense.com/no-permission/).

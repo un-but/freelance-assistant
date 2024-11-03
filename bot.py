@@ -32,7 +32,6 @@ async def get_new_orders(*page_urls: str) -> list:
     """
     logging.info("Data collection started")
     new_orders = []
-    await init_db()
 
     for page_url in page_urls:
         if "https://freelance.habr.com/tasks" in page_url:
@@ -40,7 +39,7 @@ async def get_new_orders(*page_urls: str) -> list:
         elif "https://kwork.ru/projects" in page_url:
             new_orders.extend(await get_data_from_kwork(page_url))
         else:
-            logging.info("%s URL is invalid")
+            logging.error("%s URL is invalid")
             continue
 
         logging.info("Orders from the %s are collected", page_url)
@@ -51,15 +50,16 @@ async def get_new_orders(*page_urls: str) -> list:
 
 async def send_mailing() -> None:
     """Send new orders info to all users, runs every 3 minutes."""
+    await init_db()
+
     while True:
-        await asyncio.sleep(20)
+        await asyncio.sleep(180)
         new_orders = await get_new_orders(
             "https://freelance.habr.com/tasks?categories=development_bots",
             "https://kwork.ru/projects?c=41&attr=211",
             "https://kwork.ru/projects?c=41&attr=3587",
         )
 
-        print(new_orders)
         if new_orders:
             for new_order in new_orders:
                 for user_id in await get_users():
@@ -74,7 +74,6 @@ async def send_mailing() -> None:
         else:
             logging.info("New orders not found")
 
-        await asyncio.sleep(180)
 
 
 @dp.message(CommandStart())

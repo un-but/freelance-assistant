@@ -9,7 +9,7 @@ async def init_db() -> None:
                             CREATE TABLE IF NOT EXISTS users (
                                 id INTEGER PRIMARY KEY,
                                 username TEXT,
-                                user_id INTEGER NOT NULL
+                                user_id INTEGER UNIQUE NOT NULL
                             )
                          """)
         await db.execute("""
@@ -61,7 +61,7 @@ async def get_users() -> list:
 async def add_user(username: str, user_id: int) -> None:
     async with aiosqlite.connect("data.db") as db:
         await db.execute(
-            "INSERT INTO users (username, user_id) VALUES (?, ?)",
+            "INSERT OR IGNORE INTO users (username, user_id) VALUES (?, ?)",
             (username, user_id),
             )
         await db.commit()

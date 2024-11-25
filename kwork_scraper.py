@@ -9,7 +9,7 @@ from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 
-from db import add_last_orders, get_last_orders
+from database import add_last_orders, get_last_orders
 
 
 def create_driver(mode: str = "desktop") -> Chrome:

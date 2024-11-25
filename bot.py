@@ -9,7 +9,7 @@ from aiogram.filters import Command, CommandStart
 from aiogram.types import Message
 
 from constants import TOKEN
-from db import add_user, get_users, init_db, remove_user
+from database import add_user, get_users, init_db, remove_user
 from habr_scraper import get_data_from_habr
 from kwork_scraper import get_data_from_kwork
 
@@ -50,8 +50,6 @@ async def get_new_orders(*page_urls: str) -> list:
 
 async def send_mailing() -> None:
     """Send new orders info to all users, runs every 3 minutes."""
-    await init_db()
-
     while True:
         await asyncio.sleep(180)
         new_orders = await get_new_orders(
@@ -79,7 +77,7 @@ async def send_mailing() -> None:
 @dp.message(CommandStart())
 async def start_handler(message: Message) -> None:
     """Handle /start command, enables the user's mailing."""
-    await add_user(message.from_user.username, message.from_user.id)
+    await add_user(message.from_user.id, message.from_user.username)
 
     await message.answer(
         "Здравствуйте, этот бот будет отправлять вам все новые заказы с сайтов https://freelance.habr.com/ и https://kwork.ru/."
@@ -100,6 +98,7 @@ async def stop_handler(message: Message) -> None:
 
 async def main() -> None:
     """Launch a bot and a newsletter with the webhook disabled."""
+    await init_db()
     await bot.delete_webhook(drop_pending_updates=True)
     await asyncio.gather(
         asyncio.create_task(dp.start_polling(bot)),

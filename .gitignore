@@ -1,7 +1,7 @@
 __*__/
 
 .venv/
-.test/
+*test*
 
 constants.py
 data*.db

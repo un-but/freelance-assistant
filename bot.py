@@ -51,7 +51,7 @@ async def get_new_orders(*page_urls: str) -> list:
 async def send_mailing() -> None:
     """Send new orders info to all users, runs every 3 minutes."""
     while True:
-        await asyncio.sleep(180)
+        await asyncio.sleep(5)
         new_orders = await get_new_orders(
             "https://freelance.habr.com/tasks?categories=development_bots",
             "https://kwork.ru/projects?c=41&attr=211",

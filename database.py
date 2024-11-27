@@ -64,5 +64,4 @@ async def get_last_orders(page_url: str, session: AsyncSession) -> list:
         .where(Order.page_url == page_url),
     )
     last_orders = query.first()
-    print(last_orders)
     return last_orders if last_orders else []

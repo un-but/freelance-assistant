@@ -7,70 +7,53 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.filters import Command, CommandStart
 from aiogram.types import Message
+from playwright.async_api import async_playwright
 
 from constants import TOKEN
 from database import add_user, get_users, init_db, remove_user
 from habr_scraper import get_data_from_habr
-from kwork_scraper import get_data_from_kwork
+from kwork_scraper import create_driver, get_data_from_kwork
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-async def get_new_orders(*page_urls: str) -> list:
-    """Distributes pages with orders between functions with logging of all actions.
-
-    Supported sites:
-        1. kwork.ru/projects
-        2. freelance.habr.com/tasks
-
-    Args:
-        page_urls (list[str]): URL that can be processed by one of the functions
-
-    Returns:
-        set: contain tuples with information about each order
-
-    """
-    logging.info("Data collection started")
-    new_orders = []
-
-    for page_url in page_urls:
-        if "https://freelance.habr.com/tasks" in page_url:
-            new_orders.extend(await get_data_from_habr(page_url))
-        elif "https://kwork.ru/projects" in page_url:
-            new_orders.extend(await get_data_from_kwork(page_url))
-        else:
-            logging.error("%s URL is invalid")
-            continue
-
-        logging.info("Orders from the %s are collected", page_url)
-
-    logging.info("Data collection ended")
-    return new_orders
-
 
 async def send_mailing() -> None:
     """Send new orders info to all users, runs every 3 minutes."""
-    while True:
-        await asyncio.sleep(5)
-        new_orders = await get_new_orders(
-            "https://freelance.habr.com/tasks?categories=development_bots",
-            "https://kwork.ru/projects?c=41&attr=211",
-            "https://kwork.ru/projects?c=41&attr=3587",
-        )
+    async with async_playwright() as pw:
+        driver = await create_driver(pw=pw, headless_mode=True)
+        new_orders = []
 
-        if new_orders:
-            for new_order in new_orders:
-                for user_id in await get_users():
-                    order_text = (
-                        f"<a href=\"{new_order[0]}\"><b>{new_order[1]}</b></a>\n"
-                        f"<i>{new_order[4]}</i>\n"
-                        f"<i>{new_order[2]}\t {new_order[5]}</i>\n\n"
-                        f"{new_order[3]}"
-                    )
-                    await bot.send_message(chat_id=user_id, text=order_text, parse_mode="HTML")
-            logging.info("Newsletter with new orders has been sent")
-        else:
-            logging.info("New orders not found")
+        while True:
+            await asyncio.sleep(5)
+            page_urls = (
+                "https://freelance.habr.com/tasks?categories=development_bots",
+                "https://kwork.ru/projects?c=41&attr=211",
+                "https://kwork.ru/projects?c=41&attr=3587",
+            )
+
+            for page_url in page_urls:
+                if "https://freelance.habr.com/tasks" in page_url:
+                    new_orders.extend(await get_data_from_habr(page_url))
+                elif "https://kwork.ru/projects" in page_url:
+                    new_orders.extend(await get_data_from_kwork(page_url, driver))
+                else:
+                    logging.error("%s URL is invalid", page_url)
+                    continue
+
+            if new_orders:
+                for new_order in new_orders:
+                    for user_id in await get_users():
+                        order_text = (
+                            f"<a href='{new_order[0]}'><b>{new_order[1]}</b></a>\n"
+                            f"<i>{new_order[4]}</i>\n"
+                            f"<i>{new_order[2]}\t{new_order[5]}</i>\n\n"
+                            f"{new_order[3]}"
+                        )
+                        await bot.send_message(chat_id=user_id, text=order_text, parse_mode="HTML")
+                logging.info("Newsletter with new orders has been sent")
+            else:
+                logging.info("New orders not found")
 
 
 

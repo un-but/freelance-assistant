@@ -1,5 +1,5 @@
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.ext.asyncio import AsyncAttrs
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
 class Base(AsyncAttrs, DeclarativeBase):
@@ -13,7 +13,7 @@ class User(Base):
     username: Mapped[str]
 
 
-class   Order(Base):
+class Order(Base):
     __tablename__ = "orders"
 
     page_url: Mapped[str] = mapped_column(primary_key=True)

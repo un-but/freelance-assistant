@@ -1,7 +1,8 @@
+"""Functions for work with database."""
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from models import *
+from models import Base, Order, User
 
 engine = create_async_engine(url="sqlite+aiosqlite:///data.db")
 async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
@@ -21,7 +22,7 @@ def connection(func):
     return wrapper
 
 
-async def init_db():
+async def init_db() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 

@@ -11,7 +11,7 @@ from fake_useragent import UserAgent
 from database import add_last_orders, get_last_orders
 
 
-async def get_data_from_habr(url: str = "https://freelance.habr.com/tasks?categories=development_bots") -> set:
+async def get_data_from_habr(url: str = "https://freelance.habr.com/tasks?categories=development_bots") -> list:
     """Receives latest orders from Habr Freelance.
 
     Args:
@@ -21,10 +21,11 @@ async def get_data_from_habr(url: str = "https://freelance.habr.com/tasks?catego
         set: set of tuples with information about orders
 
     """
-    async_tasks = []
-    last_orders = await get_last_orders(url)
-    new_orders = []
     async with aiohttp.ClientSession() as session:
+        async_tasks = []
+        new_orders = []
+        last_orders = await get_last_orders(url)
+
         headers = {
             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
             "user-agent": UserAgent().random,
@@ -46,9 +47,8 @@ async def get_data_from_habr(url: str = "https://freelance.habr.com/tasks?catego
                     asyncio.create_task(get_data_from_habr_order_page(order_url, session)),
                 )
 
-            # If the last processed order was not found on the page, all orders from it will be returned
+            # If there were no orders before, the function returns empty list. Otherwise, it gives new orders.
             new_orders = await asyncio.gather(*async_tasks)
-            logging.debug("New orders collected")
 
         # Overwriting the last 3 orders
         await add_last_orders(url, *order_urls[:3])
@@ -81,11 +81,11 @@ async def get_data_from_habr_order_page(order_url: str, session: aiohttp.ClientS
     order_date = f"{order_meta[0]}"
     order_responses = order_meta[1]
 
-    return (
+    return [
         order_url,
         order_name,
         order_date,
         order_description,
         order_price,
         order_responses,
-    )
+    ]

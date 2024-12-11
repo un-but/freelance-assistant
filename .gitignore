@@ -3,5 +3,6 @@ __*__/
 .venv/
 *test*
 
-constants.py
 data*.db
+
+.env

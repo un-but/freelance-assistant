@@ -1,10 +1,8 @@
 """https://kwork.ru/projects scraper functions."""
 from __future__ import annotations
 
-import logging
-
 from playwright._impl._errors import TimeoutError
-from playwright.async_api import Browser, Locator, Playwright, async_playwright, expect
+from playwright.async_api import Browser, Locator, Playwright, expect
 
 from database import add_last_orders, get_last_orders
 
@@ -13,9 +11,10 @@ async def create_driver(pw: Playwright, headless_mode: bool = True) -> Browser:
     """Create chrome driver object.
 
     Args:
+        pw (Playwright): async playwright session
         headless_mode (bool, optional): True for server and False or not specify for debug with graphical interface
     Returns:
-        Chrome: chrome driver object
+        Browser: driver object
 
     """
     if headless_mode:
@@ -44,42 +43,15 @@ async def create_driver(pw: Playwright, headless_mode: bool = True) -> Browser:
     )
 
 
-async def get_info_from_order(order: Locator, last_orders: list[str]) -> tuple[str] | None:
-    order_header = order.locator("h1.wants-card__header-title")
-    order_url = "https://kwork.ru" + await order_header.locator("a").get_attribute("href")
-    order_name = (await order_header.inner_text()).strip()
-
-    # If an order was already processed the last time, iteration stops.
-    if order_url in last_orders:
-        return None
-
-    order_price = (await order.locator("div.wants-card__price").locator("div.d-inline").inner_text()).strip()
-
-    order_description = (await order.locator("div.wants-card__description-text > div").last.inner_text()).split("Скрыть")[0].strip()
-
-    order_info = await order.locator("div.want-card__informers-row > span").all_inner_texts()
-    order_date = order_info[0].strip()
-    order_responses = f"Откликов: {
-        order_info[1].split(":")[1].strip()
-    }"
-
-    # If the last processed order was not found on the page, all orders from it will be returned
-    return (
-        order_url,
-        order_name,
-        order_date,
-        order_description,
-        order_price,
-        order_responses,
-    )
-
-
-
-async def get_data_from_kwork(url: str, browser: Browser) -> set:
+async def get_data_from_kwork(url: str, browser: Browser) -> list:
     """Receives latest orders from Kwork project exchange.
 
+    Args:
+        url (str): page_url for scraping
+        browser (Browser): driver object
+
     Returns:
-        set: set of tuples with information about orders
+        list: list of tuples with information about orders
 
     """
     new_orders = []
@@ -88,10 +60,12 @@ async def get_data_from_kwork(url: str, browser: Browser) -> set:
     context = await browser.new_context(no_viewport=True)
     page = await context.new_page()
 
-    try:
-        await page.goto(url, timeout=5000)
-    except TimeoutError:
-        await page.reload()
+    while True:
+        try:
+            await page.goto(url, timeout=5000)
+            break
+        except TimeoutError:
+            pass
 
     orders_locator = page.locator("div.want-card")
     await expect(orders_locator.last).to_be_visible()
@@ -115,14 +89,40 @@ async def get_data_from_kwork(url: str, browser: Browser) -> set:
     return new_orders[::-1] if last_orders else []
 
 
-async def main():
-    # UPDATE orders SET first_order = 'zov', second_order = 'zov', third_order = 'zov' WHERE page_url = 'https://kwork.ru/projects?c=41&attr=211'
-    async with async_playwright() as pw:
-        from database import init_db
-        await init_db()
-        await get_data_from_kwork("https://kwork.ru/projects?c=41&attr=211", await create_driver(pw, headless_mode=True))
+async def get_info_from_order(order: Locator, last_orders: list[str]) -> tuple[str] | None:
+    """Return info from kwork order.
 
-if __name__ == "__main__":
-    import asyncio
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    asyncio.run(main())
+    Args:
+        order (Locator): kwork order locator
+        last_orders (list[str]): list of handled orders
+
+    Returns:
+        tuple[str] | None: info tuple or None if order was handled in previous time
+
+    """
+    order_header = order.locator("h1.wants-card__header-title")
+    order_url = "https://kwork.ru" + await order_header.locator("a").get_attribute("href")
+    order_name = (await order_header.inner_text()).strip()
+
+    # If an order was already processed the last time, iteration stops.
+    if order_url in last_orders:
+        return None
+
+    order_price = (await order.locator("div.wants-card__price").locator("div.d-inline").inner_text()).strip()
+    order_description = (await order.locator("div.wants-card__description-text > div").last.inner_text()).split("Скрыть")[0].strip()
+
+    order_info = await order.locator("div.want-card__informers-row > span").all_inner_texts()
+    order_date = order_info[0].strip()
+    order_responses = f"Откликов: {
+        order_info[1].split(":")[1].strip()
+    }"
+
+    # If the last processed order was not found on the page, all orders from it will be returned
+    return [
+        order_url,
+        order_name,
+        order_date,
+        order_description,
+        order_price,
+        order_responses,
+    ]

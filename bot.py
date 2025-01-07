@@ -28,7 +28,6 @@ async def send_mailing() -> None:
             await asyncio.sleep(30)
             new_orders = []
             page_urls = (
-                "https://freelance.habr.com/tasks?categories=development_bots",
                 "https://kwork.ru/projects?c=41&attr=211",
                 "https://kwork.ru/projects?c=41&attr=3587",
             )
@@ -67,8 +66,8 @@ async def start_handler(message: Message) -> None:
     await add_user(message.from_user.id, message.from_user.username)
 
     await message.answer(
-        "Здравствуйте, этот бот будет отправлять вам все новые заказы с сайтов https://freelance.habr.com/ и https://kwork.ru/."
-        "Начиная пользоваться этим ботом вы запускаете рассылку."
+        "Здравствуйте, этот бот будет отправлять вам все новые заказы с сайта https://kwork.ru/.\n"
+        "Начиная пользоваться этим ботом вы запускаете рассылку.\n"
         "Для отказа от использования бота используйте команду /stop - все ваши данные будут удалены, и вы не будете получать рассылку.",
     )
 

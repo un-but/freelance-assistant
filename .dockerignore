@@ -1,8 +1,5 @@
 __*__/
-
 .venv/
-*test*
-
 *.db
-
-.env
+*.md
+*test*

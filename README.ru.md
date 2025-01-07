@@ -6,24 +6,37 @@
 
 
 ![GitHub License](https://img.shields.io/github/license/un-but/freelance-assistant?style=for-the-badge)
-![Gitea Last Commit](https://img.shields.io/gitea/last-commit/un-but/freelance-assistant?style=for-the-badge)
+![Github Commit Activity](https://img.shields.io/github/commit-activity/t/un-but/freelance-assistant?style=for-the-badge)
 
 </div>
 
 
-Телеграм бот, который каждые 3 минуты проверяет присутствие сайты на новые заказы в выбранных категориях. Используются библиотеки aiogram, aiosqlite, aiohttp и selenium. Поддерживает добавление новых сайтов.
+Телеграм бот, который каждые 30 секунд проверяет сайты на наличие новых заказов в выбранных категориях. Используются библиотеки aiogram, sqlalchemy, aiosqlite, aiohttp и playwright. Поддерживает добавление новых сайтов.
 
-На данный момент данные собираются данные с сайтов:
-* https://kwork.ru/projects
-* https://freelance.habr.com/tasks
+На данный момент поддерживается сбор с:
+* https://kwork.ru/projects/
+* https://freelance.habr.com/tasks/
 
 ## Использование
 
-Написать процесс установки и изменения
+Для использования бота предусмотрен контейнер Docker. Для его запуска необходимо скачать Docker и Git, после чего выполнить следующие команды:
+
+```bash
+git clone https://github.com/un-but/freelance-assistant # Клонируем репозиторий
+
+cd freelance-assistant # Переходим в скачанный репозиторий
+
+docker build -t freelance_assistant_image . # Создаем image в Docker
+
+echo 'TOKEN={токен_вашего_бота}' > .env # Создаем файл с настройками и записываем туда токен бота
+
+docker run -d --env-file .env --restart=unless-stopped --name freelance-assistant freelance_assistant_image # Запускаем контейнер в фоне с использованием файла настроек
+```
 
 ## Как связаться
 
-У меня есть [телеграм](https://t.me/unbuting), заказы я могу взять на платформах [Kwork](https://kwork.ru/user/unbut) и [Habr Freelance](https://freelance.habr.com/freelancers/UnBut). Беру заказы, связанные с парсингом и телеграм ботами.
+Для выполнения заказов заходите на [мой профиль на Kwork](https://kwork.ru/user/unbut) и обращайтесь либо по кворку, либо пишите в лс. 
+Если Вам нужно написать мне по другому проводу, то все равно пишете в Kwork, других средств для связи пока нет.
 
 ## Лицензия
 

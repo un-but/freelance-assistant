@@ -65,11 +65,14 @@ async def get_data_from_kwork(url: str, browser: Browser) -> list:
             await page.goto(url, timeout=5000)
             break
         except TimeoutError:
-            pass
+            return new_orders
 
-    orders_locator = page.locator("div.want-card")
-    await expect(orders_locator.last).to_be_visible()
-    orders = await orders_locator.all()
+    try:
+        orders_locator = page.locator("div.want-card")
+        await expect(orders_locator.last).to_be_visible()
+        orders = await orders_locator.all()
+    except:
+        return new_orders
 
     for order in orders:
         # If the last processed order was not found on the page, all orders from it will be returned

@@ -30,6 +30,7 @@ async def send_mailing() -> None:
             page_urls = (
                 "https://kwork.ru/projects?c=41&attr=211",
                 "https://kwork.ru/projects?c=41&attr=3587",
+                "https://kwork.ru/projects?c=113&attr=1116",
             )
 
             for page_url in page_urls:

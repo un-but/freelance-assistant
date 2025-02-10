@@ -7,6 +7,7 @@ from html import escape
 from os import getenv
 
 from aiogram import Bot, Dispatcher
+from aiogram.exceptions import TelegramNetworkError
 from aiogram.filters import Command, CommandStart
 from aiogram.types import Message
 from playwright.async_api import async_playwright
@@ -88,7 +89,7 @@ async def main() -> None:
     await init_db()
     await bot.delete_webhook(drop_pending_updates=True)
     await asyncio.gather(
-        asyncio.create_task(dp.start_polling(bot)),
+        asyncio.create_task(dp.start_polling(bot, polling_timeout=50)),
         asyncio.create_task(send_mailing()),
     )
 
@@ -96,4 +97,12 @@ async def main() -> None:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    asyncio.run(main())
+
+    while True:
+        try:
+            asyncio.run(main())
+        except KeyboardInterrupt:
+            logging.info("Бот остановлен")
+            break
+        except TelegramNetworkError:
+            logging.info("Скрипт перезагружен из-за сброса соединения")
